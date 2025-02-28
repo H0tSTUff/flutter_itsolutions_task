@@ -1,6 +1,8 @@
+import 'package:web/web.dart' as web;
+import 'dart:ui_web' as ui_web;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_itsolutions_task/services/js_interop_service.dart';
-import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 
 /// [Widget] displaying the home page consisting of an image the buttons.
 class HomePage extends StatefulWidget {
@@ -19,9 +21,6 @@ class _HomePageState extends State<HomePage> {
   /// Wether the Fullscreen mode is ON.
   bool _isFullScreen = false;
 
-  /// Count of clicks on image.
-  int _imgClickCount = 0;
-
   /// Wether the PopUp menu is appear.
   bool _isPopUpMenuOpen = false;
 
@@ -35,8 +34,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   /// Toggles full screen mode when double clicking on an image.
-  void _onTapImage() {
-    if (++_imgClickCount < 2) return;
+  void _onDoubleTapImage() {
     _toggleFullScreen();
   }
 
@@ -47,7 +45,6 @@ class _HomePageState extends State<HomePage> {
         : JSInteropService.exitFullScreen();
 
     _isFullScreen = !_isFullScreen;
-    _imgClickCount = 0;
   }
 
   /// Sets the screen to full screen mode.
@@ -88,7 +85,7 @@ class _HomePageState extends State<HomePage> {
             children: [
               HtmlImageWidget(
                 imgUrl: _imgUrl,
-                onTapImage: _onTapImage,
+                onDoubleTapImage: _onDoubleTapImage,
               ),
               const SizedBox(height: 8),
               _UrlStringWidget(
@@ -171,25 +168,33 @@ class _PopUpMenuButton extends StatelessWidget {
 class HtmlImageWidget extends StatelessWidget {
   /// Creates a widget that builds Flutter widget tree from html.
   ///
-  /// The [imgUrl] and [onTapImage] arguments must not be null.
-  const HtmlImageWidget({
+  /// The [imgUrl] and [onDoubleTapImage] arguments must not be null.
+  HtmlImageWidget({
     required this.imgUrl,
-    required this.onTapImage,
+    required this.onDoubleTapImage,
     super.key,
-  });
+  }) {
+    _registerImgFactory();
+  }
 
   /// Image URL
   final String imgUrl;
 
   /// A callback that is invoked when the image is tapped.
-  final void Function() onTapImage;
+  final void Function() onDoubleTapImage;
 
-  Widget _makeImgWidget() {
-    return HtmlWidget('<img src="$imgUrl"></img>',
-        onTapImage: (imageMetadata) => onTapImage(),
-        onLoadingBuilder: (context, element, loadingProgress) {
-          const CircularProgressIndicator();
-        });
+  /// Register image view type
+  void _registerImgFactory() {
+    ui_web.platformViewRegistry.registerViewFactory(
+      'img-view',
+      (int viewId, {Object? params}) {
+        // Create and return an HTML Element from here
+        final web.HTMLImageElement myImg = web.HTMLImageElement()
+          ..id = 'img_id_$viewId'
+          ..src = (params as String?) ?? '';
+        return myImg;
+      },
+    );
   }
 
   @override
@@ -197,13 +202,20 @@ class HtmlImageWidget extends StatelessWidget {
     return Expanded(
       child: AspectRatio(
         aspectRatio: 1,
-        child: Container(
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: Colors.grey,
-            borderRadius: BorderRadius.circular(12),
+        child: GestureDetector(
+          onDoubleTap: () => onDoubleTapImage(),
+          child: Container(
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Colors.grey,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: HtmlElementView(
+              key: UniqueKey(),
+              viewType: 'img-view',
+              creationParams: imgUrl,
+            ),
           ),
-          child: _makeImgWidget(),
         ),
       ),
     );
