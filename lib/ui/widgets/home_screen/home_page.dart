@@ -191,6 +191,8 @@ class HtmlImageWidget extends StatelessWidget {
         // Create and return an HTML Element from here
         final web.HTMLImageElement myImg = web.HTMLImageElement()
           ..id = 'img_id_$viewId'
+          ..style.width = '100%'
+          ..style.height = '100%'
           ..src = (params as String?) ?? '';
         return myImg;
       },
