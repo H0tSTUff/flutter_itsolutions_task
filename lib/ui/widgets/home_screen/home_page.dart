@@ -1,3 +1,4 @@
+import 'package:flutter_itsolutions_task/ui/widgets/home_screen/html_widget_data_provider.dart';
 import 'package:web/web.dart' as web;
 import 'dart:ui_web' as ui_web;
 
@@ -14,24 +15,13 @@ class HomePage extends StatefulWidget {
 
 /// State of a [HomePage].
 class _HomePageState extends State<HomePage> {
-  String _imgUrl = '';
-  // String _imgUrl =
-  //     'https://cdn.pixabay.com/photo/2024/12/27/14/58/owl-9294302_1280.jpg';
+  final model = HtmlWidgetModel();
 
   /// Wether the Fullscreen mode is ON.
   bool _isFullScreen = false;
 
   /// Wether the PopUp menu is appear.
   bool _isPopUpMenuOpen = false;
-
-  /// Updates the image-URL by [imgUrl] when user enters value in URL-field.
-  void _onChangedUrl(String imgUrl) => _imgUrl = imgUrl;
-
-  /// Updates the state if image-URL is not empty.
-  void _update() {
-    if (_imgUrl == '') return;
-    setState(() {/* The image-URL changed. */});
-  }
 
   /// Toggles full screen mode when double clicking on an image.
   void _onDoubleTapImage() {
@@ -80,20 +70,17 @@ class _HomePageState extends State<HomePage> {
         appBar: AppBar(),
         body: Padding(
           padding: const EdgeInsets.fromLTRB(32, 16, 32, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              HtmlImageWidget(
-                imgUrl: _imgUrl,
-                onDoubleTapImage: _onDoubleTapImage,
-              ),
-              const SizedBox(height: 8),
-              _UrlStringWidget(
-                onChanged: _onChangedUrl,
-                onGetImgBtnPressed: _update,
-              ),
-              const SizedBox(height: 64),
-            ],
+          child: HtmlWidgetDataProvider(
+            model: model,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                HtmlImageWidget(onDoubleTapImage: _onDoubleTapImage),
+                const SizedBox(height: 8),
+                const _UrlStringWidget(),
+                const SizedBox(height: 64),
+              ],
+            ),
           ),
         ),
         floatingActionButton: _PopUpMenuButton(
@@ -170,15 +157,11 @@ class HtmlImageWidget extends StatelessWidget {
   ///
   /// The [imgUrl] and [onDoubleTapImage] arguments must not be null.
   HtmlImageWidget({
-    required this.imgUrl,
     required this.onDoubleTapImage,
     super.key,
   }) {
     _registerImgFactory();
   }
-
-  /// Image URL
-  final String imgUrl;
 
   /// A callback that is invoked when the image is tapped.
   final void Function() onDoubleTapImage;
@@ -201,6 +184,7 @@ class HtmlImageWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final model = HtmlWidgetDataProvider.watch(context);
     return Expanded(
       child: AspectRatio(
         aspectRatio: 1,
@@ -215,7 +199,7 @@ class HtmlImageWidget extends StatelessWidget {
             child: HtmlElementView(
               key: UniqueKey(),
               viewType: 'img-view',
-              creationParams: imgUrl,
+              creationParams: model?.imageUrl,
             ),
           ),
         ),
@@ -230,29 +214,22 @@ class _UrlStringWidget extends StatelessWidget {
   ///
   /// The [onChanged] and [onGetImgBtnPressed] arguments must not be null.
   const _UrlStringWidget({
-    required this.onChanged,
-    required this.onGetImgBtnPressed,
     super.key,
   });
 
-  /// Called when user change url-string.
-  final void Function(String imgUrl) onChanged;
-
-  /// Called when the button is pressed.
-  final void Function() onGetImgBtnPressed;
-
   @override
   Widget build(BuildContext context) {
+    final model = HtmlWidgetDataProvider.read(context);
     return Row(
       children: [
         Expanded(
           child: TextField(
             decoration: const InputDecoration(hintText: 'Image URL'),
-            onChanged: onChanged,
+            onChanged: (value) => model?.imageUrl = value,
           ),
         ),
         ElevatedButton(
-          onPressed: onGetImgBtnPressed,
+          onPressed: model?.updateImage,
           child: const Padding(
             padding: EdgeInsets.fromLTRB(0, 12, 0, 12),
             child: Icon(Icons.arrow_forward),
