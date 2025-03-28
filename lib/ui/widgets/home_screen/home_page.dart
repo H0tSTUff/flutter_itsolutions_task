@@ -1,4 +1,5 @@
-import 'package:flutter_itsolutions_task/ui/widgets/home_screen/html_widget_data_provider.dart';
+import 'package:flutter_itsolutions_task/helpers/data_provider.dart';
+import 'package:flutter_itsolutions_task/ui/widgets/home_screen/home_screen_models.dart';
 import 'package:web/web.dart' as web;
 import 'dart:ui_web' as ui_web;
 
